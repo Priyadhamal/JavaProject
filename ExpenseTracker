@@ -1,0 +1,448 @@
+import java.io.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+class ExpenseTracker {
+    private static final String EXPENSES_FILE = "expenses.txt";
+    private static final String CATEGORIES_FILE = "categories.txt";
+    private Map<Integer, Expense> expenses;
+    private List<String> categories;
+    private int nextExpenseId;
+
+    public ExpenseTracker() {
+        expenses = new HashMap<>();
+        categories = new ArrayList<>();
+        nextExpenseId = 1;
+        loadExpenses();
+        loadCategories();
+    }
+
+    // Expense class to store details of each expense
+    private static class Expense {
+        int id;
+        LocalDate date;
+        double amount;
+        String category;
+        String description;
+
+        Expense(int id, LocalDate date, double amount, String category, String description) {
+            this.id = id;
+            this.date = date;
+            this.amount = amount;
+            this.category = category;
+            this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("ID: %d | Date: %s | Amount: %.2f | Category: %s | Description: %s",
+                    id, date, amount, category, description);
+        }
+    }
+
+    // Main menu
+    public void displayMenu() {
+        while (true) {
+            System.out.println("\nExpense Tracker Menu:");
+            System.out.println("1. Record Expense");
+            System.out.println("2. View Expenses");
+            System.out.println("3. Manage Categories");
+            System.out.println("4. Filter Expenses");
+            System.out.println("5. Modify Expense");
+            System.out.println("6. Delete Expense");
+            System.out.println("7. Generate Report");
+            System.out.println("8. Exit");
+            System.out.print("Choose an option: ");
+
+            try {
+                int choice = Integer.parseInt(new BufferedReader(new InputStreamReader(System.in)).readLine());
+
+                switch (choice) {
+                    case 1:
+                        recordExpense();
+                        break;
+                    case 2:
+                        viewExpenses();
+                        break;
+                    case 3:
+                        manageCategories();
+                        break;
+                    case 4:
+                        filterExpenses();
+                        break;
+                    case 5:
+                        modifyExpense();
+                        break;
+                    case 6:
+                        deleteExpense();
+                        break;
+                    case 7:
+                        generateReport();
+                        break;
+                    case 8:
+                        saveData();
+                        System.out.println("Goodbye!");
+                        return;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    // Recording a new expense
+    private void recordExpense() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+            System.out.print("Enter date (YYYY-MM-DD): ");
+            LocalDate date = LocalDate.parse(reader.readLine(), DateTimeFormatter.ISO_DATE);
+
+            System.out.print("Enter amount: ");
+            double amount = Double.parseDouble(reader.readLine());
+
+            System.out.print("Enter category: ");
+            String category = reader.readLine();
+            if (!categories.contains(category)) {
+                System.out.println("Category does not exist. Please create it first.");
+                return;
+            }
+
+            System.out.print("Enter description: ");
+            String description = reader.readLine();
+
+            Expense expense = new Expense(nextExpenseId++, date, amount, category, description);
+            expenses.put(expense.id, expense);
+            System.out.println("Expense recorded successfully.");
+        } catch (Exception e) {
+            System.out.println("Error: Unable to record expense. Please check your inputs.");
+        }
+    }
+
+    // Viewing all expenses
+    private void viewExpenses() {
+        if (expenses.isEmpty()) {
+            System.out.println("No expenses recorded.");
+        } else {
+            for (Expense expense : expenses.values()) {
+                System.out.println(expense);
+            }
+        }
+    }
+
+    // Managing categories
+    private void manageCategories() {
+        while (true) {
+            System.out.println("\nManage Categories:");
+            System.out.println("1. View Categories");
+            System.out.println("2. Add Category");
+            System.out.println("3. Delete Category");
+            System.out.println("4. Back to Main Menu");
+            System.out.print("Choose an option: ");
+
+            try {
+                int choice = Integer.parseInt(new BufferedReader(new InputStreamReader(System.in)).readLine());
+
+                switch (choice) {
+                    case 1:
+                        viewCategories();
+                        break;
+                    case 2:
+                        addCategory();
+                        break;
+                    case 3:
+                        deleteCategory();
+                        break;
+                    case 4:
+                        return;
+                    default:
+                        System.out.println("Invalid option. Please try again.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: Invalid input. Please enter a number.");
+            }
+        }
+    }
+
+    // Viewing categories
+    private void viewCategories() {
+        if (categories.isEmpty()) {
+            System.out.println("No categories available.");
+        } else {
+            System.out.println("Categories:");
+            for (String category : categories) {
+                System.out.println(category);
+            }
+        }
+    }
+
+    // Adding a new category
+    private void addCategory() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.print("Enter category name: ");
+            String category = reader.readLine();
+            if (categories.contains(category)) {
+                System.out.println("Category already exists.");
+            } else {
+                categories.add(category);
+                System.out.println("Category added successfully.");
+            }
+        } catch (Exception e) {
+            System.out.println("Error: Unable to add category.");
+        }
+    }
+
+    // Deleting a category
+    private void deleteCategory() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.print("Enter category name to delete: ");
+            String category = reader.readLine();
+            if (categories.remove(category)) {
+                System.out.println("Category deleted successfully.");
+            } else {
+                System.out.println("Category not found.");
+            }
+        } catch (Exception e) {
+            System.out.println("Error: Unable to delete category.");
+        }
+    }
+
+    // Filtering expenses based on criteria
+    private void filterExpenses() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.println("Filter by:");
+            System.out.println("1. Date Range");
+            System.out.println("2. Category");
+            System.out.println("3. Amount");
+            System.out.print("Choose an option: ");
+            int choice = Integer.parseInt(reader.readLine());
+
+            List<Expense> filteredExpenses = new ArrayList<>(expenses.values());
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter start date (YYYY-MM-DD): ");
+                    LocalDate startDate = LocalDate.parse(reader.readLine(), DateTimeFormatter.ISO_DATE);
+
+                    System.out.print("Enter end date (YYYY-MM-DD): ");
+                    LocalDate endDate = LocalDate.parse(reader.readLine(), DateTimeFormatter.ISO_DATE);
+
+                    filteredExpenses.removeIf(expense -> expense.date.isBefore(startDate) || expense.date.isAfter(endDate));
+                    break;
+
+                case 2:
+                    System.out.print("Enter category: ");
+                    String category = reader.readLine();
+
+                    filteredExpenses.removeIf(expense -> !expense.category.equals(category));
+                    break;
+
+                case 3:
+                    System.out.print("Enter minimum amount: ");
+                    double minAmount = Double.parseDouble(reader.readLine());
+
+                    System.out.print("Enter maximum amount: ");
+                    double maxAmount = Double.parseDouble(reader.readLine());
+
+                    filteredExpenses.removeIf(expense -> expense.amount < minAmount || expense.amount > maxAmount);
+                    break;
+
+                default:
+                    System.out.println("Invalid option.");
+                    return;
+            }
+
+            if (filteredExpenses.isEmpty()) {
+                System.out.println("No expenses match the specified criteria.");
+            } else {
+                for (Expense expense : filteredExpenses) {
+                    System.out.println(expense);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error: Unable to filter expenses. Please check your inputs.");
+        }
+    }
+
+    // Modifying an existing expense
+    private void modifyExpense() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.print("Enter expense ID to modify: ");
+            int id = Integer.parseInt(reader.readLine());
+
+            Expense expense = expenses.get(id);
+            if (expense == null) {
+                System.out.println("Expense not found.");
+                return;
+            }
+
+            System.out.print("Enter new date (YYYY-MM-DD) or press Enter to keep current: ");
+            String newDate = reader.readLine();
+            if (!newDate.isEmpty()) {
+                expense.date = LocalDate.parse(newDate, DateTimeFormatter.ISO_DATE);
+            }
+
+            System.out.print("Enter new amount or press Enter to keep current: ");
+            String newAmount = reader.readLine();
+            if (!newAmount.isEmpty()) {
+                expense.amount = Double.parseDouble(newAmount);
+            }
+
+            System.out.print("Enter new category or press Enter to keep current: ");
+            String newCategory = reader.readLine();
+            if (!newCategory.isEmpty()) {
+                if (!categories.contains(newCategory)) {
+                    System.out.println("Category does not exist. Please create it first.");
+                    return;
+                }
+                expense.category = newCategory;
+            }
+
+            System.out.print("Enter new description or press Enter to keep current: ");
+            String newDescription = reader.readLine();
+            if (!newDescription.isEmpty()) {
+                expense.description = newDescription;
+            }
+
+            System.out.println("Expense modified successfully.");
+        } catch (Exception e) {
+            System.out.println("Error: Unable to modify expense. Please check your inputs.");
+        }
+    }
+
+    // Deleting an expense
+    private void deleteExpense() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.print("Enter expense ID to delete: ");
+            int id = Integer.parseInt(reader.readLine());
+
+            if (expenses.remove(id) != null) {
+                System.out.println("Expense deleted successfully.");
+            } else {
+                System.out.println("Expense not found.");
+            }
+        } catch (Exception e) {
+            System.out.println("Error: Unable to delete expense.");
+        }
+    }
+
+    // Generating reports
+    private void generateReport() {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.println("Generate Report:");
+            System.out.println("1. Monthly Report");
+            System.out.println("2. Category-wise Report");
+            System.out.print("Choose an option: ");
+            int choice = Integer.parseInt(reader.readLine());
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter year (YYYY): ");
+                    int year = Integer.parseInt(reader.readLine());
+
+                    System.out.print("Enter month (MM): ");
+                    int month = Integer.parseInt(reader.readLine());
+
+                    double monthlyTotal = expenses.values().stream()
+                            .filter(expense -> expense.date.getYear() == year && expense.date.getMonthValue() == month)
+                            .mapToDouble(expense -> expense.amount)
+                            .sum();
+
+                    System.out.printf("Total expenses for %d-%02d: %.2f%n", year, month, monthlyTotal);
+                    break;
+
+                case 2:
+                    System.out.print("Enter category: ");
+                    String category = reader.readLine();
+
+                    double categoryTotal = expenses.values().stream()
+                            .filter(expense -> expense.category.equals(category))
+                            .mapToDouble(expense -> expense.amount)
+                            .sum();
+
+                    System.out.printf("Total expenses for category '%s': %.2f%n", category, categoryTotal);
+                    break;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
+        } catch (Exception e) {
+            System.out.println("Error: Unable to generate report. Please check your inputs.");
+        }
+    }
+
+    // Loading expenses from file
+    private void loadExpenses() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(EXPENSES_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                int id = Integer.parseInt(parts[0]);
+                LocalDate date = LocalDate.parse(parts[1], DateTimeFormatter.ISO_DATE);
+                double amount = Double.parseDouble(parts[2]);
+                String category = parts[3];
+                String description = parts[4];
+                expenses.put(id, new Expense(id, date, amount, category, description));
+                nextExpenseId = Math.max(nextExpenseId, id + 1);
+            }
+        } catch (IOException e) {
+            System.out.println("Error: Unable to load expenses.");
+        }
+    }
+
+    // Loading categories from file
+    private void loadCategories() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(CATEGORIES_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                categories.add(line);
+            }
+        } catch (IOException e) {
+            System.out.println("Error: Unable to load categories.");
+        }
+    }
+
+    // Saving data to file
+    private void saveData() {
+        saveExpenses();
+        saveCategories();
+    }
+
+    // Saving expenses to file
+    private void saveExpenses() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(EXPENSES_FILE))) {
+            for (Expense expense : expenses.values()) {
+                writer.write(String.format("%d,%s,%.2f,%s,%s%n",
+                        expense.id, expense.date, expense.amount, expense.category, expense.description));
+            }
+        } catch (IOException e) {
+            System.out.println("Error: Unable to save expenses.");
+        }
+    }
+
+    // Saving categories to file
+
+    private void saveCategories() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(CATEGORIES_FILE))) {
+            for (String category : categories) {
+                writer.write(category + "\n");
+            }
+        } catch (IOException e) {
+            System.out.println("Error: Unable to save categories.");
+        }
+    }
+
+    public static void main(String[] args) {
+        ExpenseTracker tracker = new ExpenseTracker();
+        tracker.displayMenu();
+    }
+}
